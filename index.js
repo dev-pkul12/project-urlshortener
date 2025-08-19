@@ -1,24 +1,67 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
+require("dotenv").config();
+const express = require("express");
+const cors = require("cors");
+const bodyParser = require("body-parser");
+const dns = require("dns");
+const urlParser = require("url");
+
 const app = express();
 
-// Basic Configuration
-const port = process.env.PORT || 3000;
-
+// Middleware
 app.use(cors());
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use("/public", express.static(`${process.cwd()}/public`));
 
-app.use('/public', express.static(`${process.cwd()}/public`));
-
-app.get('/', function(req, res) {
-  res.sendFile(process.cwd() + '/views/index.html');
+// Basic homepage
+app.get("/", (req, res) => {
+  res.sendFile(process.cwd() + "/views/index.html");
 });
 
-// Your first API endpoint
-app.get('/api/hello', function(req, res) {
-  res.json({ greeting: 'hello API' });
+// In-memory store for URLs
+let urlDatabase = {};
+let counter = 1;
+
+// API endpoint for shortening
+app.post("/api/shorturl", (req, res) => {
+  let inputUrl = req.body.url;
+
+  // Check valid format
+  try {
+    let parsedUrl = new URL(inputUrl);
+
+    // DNS check
+    dns.lookup(parsedUrl.hostname, (err) => {
+      if (err) {
+        return res.json({ error: "invalid url" });
+      } else {
+        let short = counter++;
+        urlDatabase[short] = inputUrl;
+        res.json({ original_url: inputUrl, short_url: short });
+      }
+    });
+  } catch (e) {
+    res.json({ error: "invalid url" });
+  }
 });
 
-app.listen(port, function() {
-  console.log(`Listening on port ${port}`);
+// Redirect endpoint
+app.get("/api/shorturl/:id", (req, res) => {
+  let short = req.params.id;
+  let original = urlDatabase[short];
+  if (original) {
+    res.redirect(original);
+  } else {
+    res.json({ error: "No short URL found" });
+  }
 });
+
+// For Vercel: export instead of listen()
+module.exports = app;
+
+// If running locally
+if (require.main === module) {
+  const port = process.env.PORT || 3000;
+  app.listen(port, () => {
+    console.log(`Listening on port ${port}`);
+  });
+}
