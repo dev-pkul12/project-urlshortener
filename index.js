@@ -3,7 +3,7 @@ const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const dns = require("dns");
-const urlParser = require("url");
+
 
 const app = express();
 
@@ -55,7 +55,6 @@ app.get("/api/shorturl/:id", (req, res) => {
   }
 });
 
-// For Vercel: export instead of listen()
 module.exports = app;
 
 // If running locally
