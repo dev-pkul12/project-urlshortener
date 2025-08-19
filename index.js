@@ -3,18 +3,18 @@ const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const dns = require("dns");
-
+const path = require("path");
 
 const app = express();
 
 // Middleware
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: false }));
-app.use("/public", express.static(`${process.cwd()}/public`));
+app.use("/public", express.static(path.join(__dirname, "public")));
 
 // Basic homepage
 app.get("/", (req, res) => {
-  res.sendFile(process.cwd() + "/views/index.html");
+  res.sendFile(path.join(__dirname, "views", "index.html"));
 });
 
 // In-memory store for URLs
